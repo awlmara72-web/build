@@ -4,6 +4,10 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { Toaster } from "@/components/ui/toaster";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import heroImage from "@/assets/hero-construction.jpg";
@@ -14,8 +18,24 @@ import achievement3 from "@/assets/achievement-3.jpg";
 
 const Index = () => {
   const { t, lang } = useI18n();
+  const { toast } = useToast();
+  const [isScrolled, setIsScrolled] = useState(false);
   const isRtl = lang === "ar";
   const Arrow = isRtl ? ArrowLeft : ArrowRight;
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: isRtl ? "تم الإرسال بنجاح" : "Message Sent Successfully",
+      description: isRtl ? "سنتواصل معك في أقرب وقت ممكن." : "We will get back to you as soon as possible.",
+    });
+  };
 
   const services = [
     { icon: Building2, t: "svc1_t" as const, d: "svc1_d" as const },
@@ -63,15 +83,15 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background font-display">
       {/* Nav */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-gradient-accent flex items-center justify-center shadow-accent">
+      <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${isScrolled ? "bg-primary/90 backdrop-blur-md h-16 shadow-lg border-b border-white/10" : "bg-transparent h-20"}`}>
+        <div className="container h-full flex items-center justify-between">
+          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center shadow-accent group-hover:scale-110 transition-transform">
               <Building2 className="w-5 h-5 text-accent-foreground" />
             </div>
-            <span className="font-bold text-lg text-primary">{t("brand")}</span>
+            <span className={`font-bold text-lg transition-colors ${isScrolled ? "text-primary-foreground" : "text-primary-foreground"}`}>{t("brand")}</span>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
+          <nav className={`hidden md:flex items-center gap-8 text-sm font-medium transition-colors ${isScrolled ? "text-primary-foreground/70" : "text-primary-foreground/80"}`}>
             <a href="#home" className="hover:text-accent transition-colors">{t("nav_home")}</a>
             <a href="#services" className="hover:text-accent transition-colors">{t("nav_services")}</a>
             <a href="#projects" className="hover:text-accent transition-colors">{t("nav_projects")}</a>
@@ -196,14 +216,32 @@ const Index = () => {
                   {projects
                     .filter((p) => tab === "all" || p.category === tab)
                     .map((p) => (
-                      <div key={p.t + p.img} className="group relative overflow-hidden rounded-2xl shadow-elegant cursor-pointer animate-fade-up">
-                        <img src={p.img} alt={t(p.t)} loading="lazy" className="w-full h-96 object-cover group-hover:scale-110 transition-transform duration-700" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/40 to-transparent" />
-                        <div className="absolute bottom-0 inset-x-0 p-6 text-primary-foreground">
-                          <span className="text-accent text-sm font-medium">{t(p.y)}</span>
-                          <h3 className="text-2xl font-bold mt-1">{t(p.t)}</h3>
-                        </div>
-                      </div>
+                    .map((p) => (
+                      <Dialog key={p.t + p.img}>
+                        <DialogTrigger asChild>
+                          <div className="group relative overflow-hidden rounded-2xl shadow-elegant cursor-pointer animate-fade-up">
+                            <img src={p.img} alt={t(p.t)} loading="lazy" className="w-full h-96 object-cover group-hover:scale-110 transition-transform duration-700" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/40 to-transparent" />
+                            <div className="absolute bottom-0 inset-x-0 p-6 text-primary-foreground">
+                              <span className="text-accent text-sm font-medium">{t(p.y)}</span>
+                              <h3 className="text-2xl font-bold mt-1">{t(p.t)}</h3>
+                            </div>
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl bg-background border-border">
+                          <DialogHeader>
+                            <DialogTitle className="text-3xl font-bold text-primary">{t(p.t)}</DialogTitle>
+                            <DialogDescription className="text-accent font-medium">{t(p.y)}</DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-6">
+                            <img src={p.img} alt={t(p.t)} className="w-full h-64 md:h-96 object-cover rounded-xl" />
+                            <p className="text-muted-foreground text-lg leading-relaxed">
+                              {isRtl ? "نحن في شركة البنيان فخورون بتنفيذ هذا المشروع بأعلى معايير الجودة العالمية، مع الالتزام التام بالتفاصيل المعمارية والمواعيد المحددة." : "At Al Bunyan, we are proud to have executed this project with the highest international quality standards, with full commitment to architectural details and deadlines."}
+                            </p>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    ))}
                     ))}
                 </div>
               </TabsContent>
@@ -342,12 +380,12 @@ const Index = () => {
             </div>
             <Card className="p-8 bg-background/95 backdrop-blur border-0 shadow-elegant">
               <h3 className="text-2xl font-bold text-primary mb-6">{t("form_title")}</h3>
-              <form className="space-y-4">
-                <input type="text" placeholder={t("form_name")} className="w-full h-12 px-4 rounded-lg bg-secondary border border-border focus:border-accent focus:outline-none transition-colors" />
-                <input type="email" placeholder={t("form_email")} className="w-full h-12 px-4 rounded-lg bg-secondary border border-border focus:border-accent focus:outline-none transition-colors" />
-                <input type="tel" placeholder={t("form_phone")} className="w-full h-12 px-4 rounded-lg bg-secondary border border-border focus:border-accent focus:outline-none transition-colors" />
-                <textarea placeholder={t("form_msg")} rows={4} className="w-full px-4 py-3 rounded-lg bg-secondary border border-border focus:border-accent focus:outline-none transition-colors resize-none" />
-                <Button size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-12 shadow-accent">{t("form_send")}</Button>
+              <form className="space-y-4" onSubmit={handleFormSubmit}>
+                <input required type="text" placeholder={t("form_name")} className="w-full h-12 px-4 rounded-lg bg-secondary border border-border focus:border-accent focus:outline-none transition-colors" />
+                <input required type="email" placeholder={t("form_email")} className="w-full h-12 px-4 rounded-lg bg-secondary border border-border focus:border-accent focus:outline-none transition-colors" />
+                <input required type="tel" placeholder={t("form_phone")} className="w-full h-12 px-4 rounded-lg bg-secondary border border-border focus:border-accent focus:outline-none transition-colors" />
+                <textarea required placeholder={t("form_msg")} rows={4} className="w-full px-4 py-3 rounded-lg bg-secondary border border-border focus:border-accent focus:outline-none transition-colors resize-none" />
+                <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-12 shadow-accent">{t("form_send")}</Button>
               </form>
             </Card>
           </div>
@@ -383,6 +421,7 @@ const Index = () => {
           {t("whatsapp_tooltip")}
         </span>
       </a>
+      <Toaster />
     </div>
   );
 };
