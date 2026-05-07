@@ -216,7 +216,6 @@ const Index = () => {
                   {projects
                     .filter((p) => tab === "all" || p.category === tab)
                     .map((p) => (
-                    .map((p) => (
                       <Dialog key={p.t + p.img}>
                         <DialogTrigger asChild>
                           <div className="group relative overflow-hidden rounded-2xl shadow-elegant cursor-pointer animate-fade-up">
@@ -241,7 +240,6 @@ const Index = () => {
                           </div>
                         </DialogContent>
                       </Dialog>
-                    ))}
                     ))}
                 </div>
               </TabsContent>
